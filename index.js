@@ -15,30 +15,38 @@ const eleven = new ElevenLabsClient({ apiKey: process.env.ELEVEN_API_KEY });
 app.post("/chat", async (req, res) => {
   const { prompt } = req.body;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
-    stream: false,
-    messages: [
-      { role: "system", content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini." },
-      { role: "user", content: prompt }
-    ]
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      stream: false,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini.",
+        },
+        { role: "user", content: prompt },
+      ],
+    });
 
-  const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
+    const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
 
-  const result = await eleven.textToSpeech.convert({
-    voiceId: process.env.VOICE_ID,
-    modelId: "eleven_multilingual_v2",
-    text,
-    optimizeStreamingLatency: 0,
-    outputFormat: "mp3_44100_128", // ✅ delujoč format
-  });
+    const result = await eleven.textToSpeech.convert({
+      voiceId: process.env.VOICE_ID,
+      modelId: "eleven_multilingual_v2",
+      text,
+      outputFormat: "mp3_44100_128",
+    });
 
-  const arrayBuffer = await result.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+    const arrayBuffer = await result.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-  res.setHeader("Content-Type", "audio/mpeg");
-  res.send(buffer);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.send(buffer);
+  } catch (error) {
+    console.error("Napaka pri generiranju:", error);
+    res.status(500).send("Napaka pri obdelavi zahteve.");
+  }
 });
 
 const port = process.env.PORT || 3000;

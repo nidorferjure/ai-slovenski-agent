@@ -19,23 +19,33 @@ app.post("/chat", async (req, res) => {
     model: "gpt-4o",
     stream: false,
     messages: [
-      { role: "system", content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini." },
-      { role: "user", content: prompt }
-    ]
+      {
+        role: "system",
+        content:
+          "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini.",
+      },
+      { role: "user", content: prompt },
+    ],
   });
 
-  const text = completion.choices[0].message.content;
+  const text = completion.choices[0].message.content || "Oprostite, nekaj je šlo narobe.";
 
   const result = await eleven.textToSpeech.convert({
-  voiceId: process.env.VOICE_ID,
-  modelId: "eleven_multilingual_v2",
-  text,
-  optimizeStreamingLatency: 0,
-  outputFormat: "mp3_44100_64"
-});
+    voiceId: process.env.VOICE_ID,
+    modelId: "eleven_multilingual_v2",
+    text,
+    optimizeStreamingLatency: 0,
+    outputFormat: "mp3_44100_64",
+  });
 
-  
+  const arrayBuffer = await result.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
   res.setHeader("Content-Type", "audio/mpeg");
-  audio.pipe(res);
+  res.send(buffer);
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`✅ Slovenski AI agent running at http://localhost:${port}`);
 });

@@ -29,17 +29,20 @@ app.post("/chat", async (req, res) => {
 
   const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
 
-  const audio = await eleven.textToSpeech.convert({
-    voiceId: process.env.VOICE_ID,
-    modelId: "eleven_multilingual_v2",
-    text,
-    optimizeStreamingLatency: 0,
-    outputFormat: "mp3_44100_128"
-  });
-
-  res.setHeader("Content-Type", "audio/mpeg");
-  res.send(audio);
+  const result = await eleven.textToSpeech.convert({
+  voiceId: process.env.VOICE_ID,
+  modelId: "eleven_multilingual_v2",
+  text,
+  optimizeStreamingLatency: 0,
+  outputFormat: "mp3_44100_128"
 });
+
+const arrayBuffer = await result.arrayBuffer();
+const buffer = Buffer.from(arrayBuffer);
+
+res.setHeader("Content-Type", "audio/mpeg");
+res.send(buffer);
+
 
 
 const port = process.env.PORT || 3000;

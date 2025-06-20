@@ -5,7 +5,6 @@ import { ElevenLabsClient } from "elevenlabs";
 import cors from "cors";
 
 dotenv.config();
-
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -16,45 +15,39 @@ const eleven = new ElevenLabsClient({ apiKey: process.env.ELEVEN_API_KEY });
 app.post("/chat", async (req, res) => {
   const { prompt } = req.body;
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
+  // Get full text response (non-streaming)
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    stream: false,
+    messages: [
+      {
+        role: "system",
+        content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini.",
+      },
+      { role: "user", content: prompt },
+    ],
+  });
 
-    const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
-    console.log("🧠 TTS tekst:", text);
+  const fullText = completion.choices[0].message.content;
+  console.log("AI odgovor:", fullText);
 
-    const arrayBuffer = await eleven.textToSpeech.convert({
-      voiceId: process.env.VOICE_ID,
-      modelId: "eleven_multilingual_v2",
-      text,
-      outputFormat: "mp3_44100_64",
-      optimizeStreamingLatency: 0,
-    });
+  // Generate MP3 from ElevenLabs
+  const audio = await eleven.textToSpeech.convert({
+    voiceId: process.env.VOICE_ID,
+    modelId: "eleven_multilingual_v2",
+    text: fullText,
+    voiceSettings: {
+      stability: 0.4,
+      similarity_boost: 0.7,
+    },
+  });
 
-    const buffer = Buffer.from(arrayBuffer);
-    console.log("📦 Velikost MP3 buffra:", buffer.length);
-
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Content-Length", buffer.length);
-    res.send(buffer);
-  } catch (error) {
-    console.error("❌ Napaka pri /chat:", error);
-    res.status(500).send("Napaka pri generiranju odgovora.");
-  }
+  // Send MP3 stream as response
+  res.setHeader("Content-Type", "audio/mpeg");
+  audio.pipe(res);
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`✅ Slovenian AI agent running at http://localhost:${port}`);
 });

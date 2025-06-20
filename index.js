@@ -19,28 +19,28 @@ app.post("/chat", async (req, res) => {
     model: "gpt-4o",
     stream: false,
     messages: [
-      { role: "system", content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini." },
+      {
+        role: "system",
+        content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini.",
+      },
       { role: "user", content: prompt }
     ]
   });
 
-  let fullText = "";
-  for await (const chunk of completion) {
-    const part = chunk.choices?.[0]?.delta?.content || "";
-    fullText += part;
-    process.stdout.write(part);
-  }
+  const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
 
   const audio = await eleven.textToSpeech.convert({
     voiceId: process.env.VOICE_ID,
     modelId: "eleven_multilingual_v2",
-    text: fullText,
-    voiceSettings: { stability: 0.4, similarity_boost: 0.7 }
+    text,
+    optimizeStreamingLatency: 0,
+    outputFormat: "mp3_44100_128"
   });
 
   res.setHeader("Content-Type", "audio/mpeg");
-  audio.pipe(res);
+  res.send(audio);
 });
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {

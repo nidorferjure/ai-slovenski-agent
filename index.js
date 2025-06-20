@@ -26,14 +26,15 @@ app.post("/chat", async (req, res) => {
 
   const text = completion.choices[0].message.content;
 
-  const audio = await eleven.textToSpeech.convert({
-    voiceId: process.env.VOICE_ID,
-    modelId: "eleven_multilingual_v2",
-    text: text,
-    optimize_streaming_latency: 0,
-      outputFormat: "mp3_44100_64"
+  const result = await eleven.textToSpeech.convert({
+  voiceId: process.env.VOICE_ID,
+  modelId: "eleven_multilingual_v2",
+  text,
+  optimizeStreamingLatency: 0,
+  outputFormat: "mp3_44100_64"
+});
 
-  });
+  
 
   res.setHeader("Content-Type", "audio/mpeg");
   audio.pipe(res);

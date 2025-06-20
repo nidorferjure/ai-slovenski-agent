@@ -35,8 +35,8 @@ app.post("/chat", async (req, res) => {
       outputFormat: "mp3_44100_128"
     });
 
-    const arrayBuffer = await result.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = Buffer.from(await result.arrayBuffer());
+
 
     res.setHeader("Content-Type", "audio/mpeg");
     res.send(buffer);

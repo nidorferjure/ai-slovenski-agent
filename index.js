@@ -31,14 +31,9 @@ app.post("/chat", async (req, res) => {
       ],
     });
 
-    const text = completion.choices[0]?.message?.content;
+    const text = completion.choices[0]?.message?.content || "Ni odgovora.";
 
-    if (!text) {
-      console.error("Prazno besedilo iz OpenAI.");
-      return res.status(500).send("Napaka: prazno besedilo iz OpenAI.");
-    }
-
-    const audio = await eleven.textToSpeech.convert({
+    const arrayBuffer = await eleven.textToSpeech.convert({
       voiceId: process.env.VOICE_ID,
       modelId: "eleven_multilingual_v2",
       text,
@@ -46,8 +41,11 @@ app.post("/chat", async (req, res) => {
       optimizeStreamingLatency: 0,
     });
 
+    const buffer = Buffer.from(arrayBuffer); // ✅ to je KLJUČNO!
+
     res.setHeader("Content-Type", "audio/mpeg");
-    res.send(Buffer.from(audio));
+    res.setHeader("Content-Length", buffer.length);
+    res.send(buffer);
   } catch (error) {
     console.error("Napaka:", error);
     res.status(500).send("Napaka pri generiranju odgovora.");

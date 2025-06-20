@@ -32,6 +32,7 @@ app.post("/chat", async (req, res) => {
     text: text,
     optimize_streaming_latency: 0,
       outputFormat: "mp3_44100_64"
+
   });
 
   res.setHeader("Content-Type", "audio/mpeg");

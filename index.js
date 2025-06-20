@@ -17,7 +17,7 @@ app.post("/chat", async (req, res) => {
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
-    stream: true,
+    stream: false,
     messages: [
       { role: "system", content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini." },
       { role: "user", content: prompt }

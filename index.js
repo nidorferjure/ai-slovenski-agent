@@ -31,7 +31,7 @@ app.post("/chat", async (req, res) => {
     modelId: "eleven_multilingual_v2",
     text: text,
     optimize_streaming_latency: 0,
-    output_format: "mp3_44100_128"
+      outputFormat: "mp3_44100_64"
   });
 
   res.setHeader("Content-Type", "audio/mpeg");

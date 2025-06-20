@@ -5,6 +5,7 @@ import { ElevenLabsClient } from "elevenlabs";
 import cors from "cors";
 
 dotenv.config();
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -22,38 +23,34 @@ app.post("/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini."
+          content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini.",
         },
         {
           role: "user",
-          content: prompt
-        }
-      ]
+          content: prompt,
+        },
+      ],
     });
 
-    const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
+    const text = completion.choices[0].message.content;
 
-    const result = await eleven.textToSpeech.convert({
+    const stream = await eleven.textToSpeech.stream({
       voiceId: process.env.VOICE_ID,
       modelId: "eleven_multilingual_v2",
       text,
+      outputFormat: "mp3_44100_64",
       optimizeStreamingLatency: 0,
-      outputFormat: "mp3_44100_128"
     });
 
-    // ⬇️ TO JE KLJUČNO ZA PRAVILEN MP3 ⬇️
-    const arrayBuffer = await result.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
     res.setHeader("Content-Type", "audio/mpeg");
-    res.send(buffer);
-  } catch (err) {
-    console.error("Napaka:", err);
+    stream.pipe(res);
+  } catch (error) {
+    console.error("Napaka:", error);
     res.status(500).send("Napaka pri generiranju odgovora.");
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`✅ Slovenski AI agent teče na http://localhost:${port}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });

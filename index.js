@@ -31,7 +31,8 @@ app.post("/chat", async (req, res) => {
       ],
     });
 
-    const text = completion.choices[0]?.message?.content || "Ni odgovora.";
+    const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
+    console.log("🧠 TTS tekst:", text);
 
     const arrayBuffer = await eleven.textToSpeech.convert({
       voiceId: process.env.VOICE_ID,
@@ -41,13 +42,14 @@ app.post("/chat", async (req, res) => {
       optimizeStreamingLatency: 0,
     });
 
-    const buffer = Buffer.from(arrayBuffer); // ✅ to je KLJUČNO!
+    const buffer = Buffer.from(arrayBuffer);
+    console.log("📦 Velikost MP3 buffra:", buffer.length);
 
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Content-Length", buffer.length);
     res.send(buffer);
   } catch (error) {
-    console.error("Napaka:", error);
+    console.error("❌ Napaka pri /chat:", error);
     res.status(500).send("Napaka pri generiranju odgovora.");
   }
 });

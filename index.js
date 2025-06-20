@@ -10,8 +10,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const eleven = new ElevenLabsClient({ apiKey: process.env.ELEVEN_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const eleven = new ElevenLabsClient({
+  apiKey: process.env.ELEVEN_API_KEY,
+});
 
 app.post("/chat", async (req, res) => {
   const { prompt } = req.body;
@@ -34,7 +39,8 @@ app.post("/chat", async (req, res) => {
 
     const text = completion.choices[0].message.content;
 
-    const stream = await eleven.textToSpeech.stream({
+    // Pridobi MP3 kot arrayBuffer (ne stream)
+    const audioArrayBuffer = await eleven.textToSpeech.convert({
       voiceId: process.env.VOICE_ID,
       modelId: "eleven_multilingual_v2",
       text,
@@ -42,8 +48,9 @@ app.post("/chat", async (req, res) => {
       optimizeStreamingLatency: 0,
     });
 
+    // Pošlji MP3 kot binary buffer
     res.setHeader("Content-Type", "audio/mpeg");
-    stream.pipe(res);
+    res.send(Buffer.from(audioArrayBuffer));
   } catch (error) {
     console.error("Napaka:", error);
     res.status(500).send("Napaka pri generiranju odgovora.");

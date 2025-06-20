@@ -20,12 +20,18 @@ app.post("/chat", async (req, res) => {
       model: "gpt-4o",
       stream: false,
       messages: [
-        { role: "system", content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini." },
-        { role: "user", content: prompt }
+        {
+          role: "system",
+          content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
       ]
     });
 
-    const text = completion.choices[0]?.message?.content || "Oprostite, prišlo je do napake.";
+    const text = completion.choices[0]?.message?.content || "Oprostite, nekaj je šlo narobe.";
 
     const result = await eleven.textToSpeech.convert({
       voiceId: process.env.VOICE_ID,
@@ -35,13 +41,19 @@ app.post("/chat", async (req, res) => {
       outputFormat: "mp3_44100_128"
     });
 
-    const buffer = Buffer.from(await result.arrayBuffer());
-
+    // ⬇️ TO JE KLJUČNO ZA PRAVILEN MP3 ⬇️
+    const arrayBuffer = await result.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
     res.setHeader("Content-Type", "audio/mpeg");
     res.send(buffer);
-  } catch (error) {
-    console.error("Napaka pri generiranju:", error);
-    res.status(500).send("Napaka pri generiranju MP3 datoteke.");
+  } catch (err) {
+    console.error("Napaka:", err);
+    res.status(500).send("Napaka pri generiranju odgovora.");
   }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`✅ Slovenski AI agent teče na http://localhost:${port}`);
 });

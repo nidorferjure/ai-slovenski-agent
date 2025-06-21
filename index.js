@@ -1,11 +1,3 @@
-if (!VOICE_ID || !API_KEY) {
-  console.error("❌ Missing VOICE_ID or API_KEY in environment variables.");
-  process.exit(1);
-}
-
-console.log("📤 Pošiljam tekst:", text);
-
-
 import axios from 'axios';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -15,7 +7,14 @@ dotenv.config();
 const VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
 const API_KEY = process.env.ELEVENLABS_API_KEY;
 
+if (!VOICE_ID || !API_KEY) {
+  console.error("❌ Missing VOICE_ID or API_KEY in environment variables.");
+  process.exit(1);
+}
+
 async function fetchAudio(text) {
+  console.log("📤 Pošiljam tekst:", text);
+
   try {
     const response = await axios({
       method: 'POST',
@@ -51,5 +50,5 @@ async function fetchAudio(text) {
   }
 }
 
-// Call it with a test phrase
+// 👇 Call it here
 fetchAudio("Zdravo! Kako ti lahko pomagam?");

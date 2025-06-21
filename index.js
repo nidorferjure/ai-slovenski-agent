@@ -1,50 +1,65 @@
 import express from "express";
-import dotenv from "dotenv";
-import { OpenAI } from "openai";
-import { ElevenLabsClient } from "elevenlabs";
 import cors from "cors";
+import dotenv from "dotenv";
+import bodyParser from "body-parser";
+import fetch from "node-fetch";
 
 dotenv.config();
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const eleven = new ElevenLabsClient({ apiKey: process.env.ELEVEN_API_KEY });
+const PORT = process.env.PORT || 3000;
 
 app.post("/chat", async (req, res) => {
+  const { prompt } = req.body;
+
   try {
-    const prompt = req.body.prompt;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "Odgovarjaj kot prijazen, profesionalen AI asistent v popolni slovenščini." },
-        { role: "user", content: prompt }
-      ]
+    // STEP 1: Get GPT-4 text response
+    const completion = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
 
-    const reply = completion.choices[0].message.content;
+    const completionData = await completion.json();
+    const textResponse = completionData.choices[0].message.content;
 
-    const audioStream = await eleven.textToSpeech.convert({
-      voiceId: process.env.VOICE_ID,
-      modelId: "eleven_multilingual_v2",
-      text: reply,
-      voiceSettings: {
-        stability: 0.5,
-        similarity_boost: 0.75
-      }
+    // STEP 2: Send to ElevenLabs and stream MP3
+    const audioResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`, {
+      method: "POST",
+      headers: {
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text: textResponse,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: { stability: 0.5, similarity_boost: 0.5 },
+      }),
     });
+
+    if (!audioResponse.ok) {
+      const errorText = await audioResponse.text();
+      throw new Error(`ElevenLabs error: ${errorText}`);
+    }
 
     res.setHeader("Content-Type", "audio/mpeg");
-    audioStream.pipe(res);
+    audioResponse.body.pipe(res);
+
   } catch (err) {
-    console.error("❌ Napaka pri generiranju:", err);
-    res.status(500).json({ error: "Napaka pri generiranju glasu." });
+    console.error("Error:", err);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`✅ Slovenian AI agent listening at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

@@ -1,3 +1,11 @@
+if (!VOICE_ID || !API_KEY) {
+  console.error("❌ Missing VOICE_ID or API_KEY in environment variables.");
+  process.exit(1);
+}
+
+console.log("📤 Pošiljam tekst:", text);
+
+
 import axios from 'axios';
 import fs from 'fs';
 import dotenv from 'dotenv';

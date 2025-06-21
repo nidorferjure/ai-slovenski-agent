@@ -55,7 +55,9 @@ app.post("/chat", async (req, res) => {
 
     // 4. Pošlji mp3 kot odgovor
     res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Content-Disposition", "attachment; filename=odgovor.mp3");
     res.send(mp3Buffer);
+
   } catch (error) {
     console.error("❌ Napaka:", error);
     res.status(500).send("Napaka pri generiranju odgovora.");
